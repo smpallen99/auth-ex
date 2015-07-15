@@ -20,6 +20,7 @@ defmodule Test.Ability do
     if user.admin? do
       can :edit, Test.Asset
     end
+    can :create, Test.Asset, id: [4, 5]
   end
 end
 
@@ -54,9 +55,16 @@ defmodule AuthExTest do
     user = struct meta[:user], admin?: true
     assert Test.Ability.handle_ability(user, :edit, %Test.Asset{user_id: 2})
   end
-  
+
   test "invalid admin asset edit", meta do
     user = struct meta[:user]
     refute Test.Ability.handle_ability(user, :edit, %Test.Asset{user_id: 2})
+  end
+  test "valid list", meta do
+    assert Test.Ability.handle_ability(meta[:user], :create, %Test.Asset{id: 4})
+    assert Test.Ability.handle_ability(meta[:user], :create, %Test.Asset{id: 5})
+  end
+  test "invalid list", meta do
+    refute Test.Ability.handle_ability(meta[:user], :create, %Test.Asset{id: 3})
   end
 end

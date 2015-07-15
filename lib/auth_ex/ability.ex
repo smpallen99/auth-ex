@@ -47,13 +47,22 @@ defmodule AuthEx.Ability do
       def valid_action?(resource, %{actions: actions, module: model_name, opts: opts}, action, 
           %{__struct__: model_name} = model) do
         if action in actions do
-          {field, value} = hd opts
-          Map.get(model, field) == value
+          valid_opts? model, opts, false
         else
           false
         end
       end
       def valid_action?(_, _, _, _), do: false
+
+      def valid_opts?(model, [], acc), do: acc
+      def valid_opts?(model, [{field, list} | t], acc) when is_list(list) do
+        new_acc = if Map.get(model, field) in list, do: true, else: acc
+        valid_opts?(model, t, new_acc)
+      end
+      def valid_opts?(model, [{field, value} | t], acc) do
+        new_acc = if Map.get(model, field) == value, do: true, else: acc
+        valid_opts?(model, t, new_acc)
+      end
     end
   end
 
