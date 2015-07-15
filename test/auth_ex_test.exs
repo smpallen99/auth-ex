@@ -32,39 +32,39 @@ defmodule AuthExTest do
   end
 
   test "valid User index", meta do
-    assert Test.Ability.handle_ability(meta[:user], :index, %Test.User{})
+    assert Test.Ability.authorized?(meta[:user], :index, %Test.User{})
   end
 
   test "valid Account index", meta do
-    assert Test.Ability.handle_ability(meta[:user], :index, %Test.Account{})
+    assert Test.Ability.authorized?(meta[:user], :index, %Test.Account{})
   end
 
   test "invalid Asset index", meta do
-    refute Test.Ability.handle_ability(meta[:user], :index, %Test.Asset{})
+    refute Test.Ability.authorized?(meta[:user], :index, %Test.Asset{})
   end
 
   test "valid Asset index", meta do
-    assert Test.Ability.handle_ability(meta[:user], :index, %Test.Asset{user_id: 1})
+    assert Test.Ability.authorized?(meta[:user], :index, %Test.Asset{user_id: 1})
   end
 
   test "invalid user_id asset index", meta do
-    refute Test.Ability.handle_ability(meta[:user], :index, %Test.Asset{user_id: 2})
+    refute Test.Ability.authorized?(meta[:user], :index, %Test.Asset{user_id: 2})
   end
 
   test "valid admin asset edit", meta do
     user = struct meta[:user], admin?: true
-    assert Test.Ability.handle_ability(user, :edit, %Test.Asset{user_id: 2})
+    assert Test.Ability.authorized?(user, :edit, %Test.Asset{user_id: 2})
   end
 
   test "invalid admin asset edit", meta do
     user = struct meta[:user]
-    refute Test.Ability.handle_ability(user, :edit, %Test.Asset{user_id: 2})
+    refute Test.Ability.authorized?(user, :edit, %Test.Asset{user_id: 2})
   end
   test "valid list", meta do
-    assert Test.Ability.handle_ability(meta[:user], :create, %Test.Asset{id: 4})
-    assert Test.Ability.handle_ability(meta[:user], :create, %Test.Asset{id: 5})
+    assert Test.Ability.authorized?(meta[:user], :create, %Test.Asset{id: 4})
+    assert Test.Ability.authorized?(meta[:user], :create, %Test.Asset{id: 5})
   end
   test "invalid list", meta do
-    refute Test.Ability.handle_ability(meta[:user], :create, %Test.Asset{id: 3})
+    refute Test.Ability.authorized?(meta[:user], :create, %Test.Asset{id: 3})
   end
 end

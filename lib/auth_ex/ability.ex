@@ -25,7 +25,7 @@ defmodule AuthEx.Ability do
 
     quote location: :keep, bind_quoted: [resource: escape(resource), contents: escape(contents)] do
       #def handle_ability(var!(conn), unquote(resource) = var!(resource), action) do
-      def handle_ability(unquote(resource) = var!(resource), action, model) do
+      def authorized?(unquote(resource) = var!(resource), action, model) do
       #def handle_ability(action, model) do 
         model_name = model.__struct__
         res = var!(resource)
