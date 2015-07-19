@@ -1,31 +1,7 @@
-defmodule Test.User do
-  defstruct id: nil, name: "", admin?: false
-end
-defmodule Test.Account do
-  defstruct id: nil, name: ""
-end
-defmodule Test.Asset do
-  defstruct id: nil, name: "", user_id: nil
-end
-
-defmodule Test.Ability do
-  use AuthEx.Ability
-
-  abilities user do
-    can :manage, Test.User
-    can :index, Test.Account
-
-    can :manage, Test.Asset, user_id: user.id
-
-    if user.admin? do
-      can :edit, Test.Asset
-    end
-    can :create, Test.Asset, id: [4, 5]
-  end
-end
-
 defmodule AuthExTest do
   use ExUnit.Case
+  require Ecto.Query
+  import Ecto.Query
 
   setup do
     {:ok, user: %Test.User{id: 1}}
@@ -66,5 +42,26 @@ defmodule AuthExTest do
   end
   test "invalid list", meta do
     refute Test.Ability.authorized?(meta[:user], :create, %Test.Asset{id: 3})
+  end
+
+  test "load resource with 1 field match", meta do
+    id = 1
+    query = from i in Test.Asset, where: i.user_id == ^id
+    res = Test.Ability.load_resource(meta[:user], :index, %Test.Asset{user_id: 1}) 
+    assert inspect(res) == inspect(query)
+  end
+  test "load resrouce with 2 fields match", meta do
+    user_id = 1
+    asset_id = 3
+    query = from i in Test.Inventory, where: i.asset_id == ^asset_id, where: i.user_id == ^user_id
+    res = Test.Ability.load_resource(meta[:user], :index, %Test.Inventory{user_id: 1, asset_id: 3})
+    assert inspect(res) == inspect(query)
+  end
+
+  test "nest attributes", meta do
+    user_id = meta[:user]
+    query = from i in Test.Item, join: u in Test.User, on: i.user_id == u.id, where: u.account_id == ^user_id
+    res = Test.Ability.load_resource(meta[:user], :index, %Test.Item{})
+    assert inspect(res) == inspect(query)
   end
 end
