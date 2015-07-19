@@ -25,6 +25,7 @@ defmodule AuthEx.Builder do
         Logger.error "Unknown field type level: #{level}, model_name: #{model_name}, name: #{name}"
         throw {:error, "Unknown field type", model_name, name}
     end
+    build_query(t, :index, model_name, level, query)
   end
   # def build_query([{name, value} | t], :index, model_name, level, acc) do
   #   IO.puts "build_query 2 name: #{name}" 

@@ -44,24 +44,24 @@ defmodule AuthExTest do
     refute Test.Ability.authorized?(meta[:user], :create, %Test.Asset{id: 3})
   end
 
-  test "load resource with 1 field match", meta do
-    id = 1
-    query = from i in Test.Asset, where: i.user_id == ^id
-    res = Test.Ability.load_resource(meta[:user], :index, %Test.Asset{user_id: 1}) 
-    assert inspect(res) == inspect(query)
-  end
-  test "load resrouce with 2 fields match", meta do
-    user_id = 1
-    asset_id = 3
-    query = from i in Test.Inventory, where: i.asset_id == ^asset_id, where: i.user_id == ^user_id
-    res = Test.Ability.load_resource(meta[:user], :index, %Test.Inventory{user_id: 1, asset_id: 3})
-    assert inspect(res) == inspect(query)
-  end
+  # test "load resource with 1 field match", meta do
+  #   id = 1
+  #   query = from i in Test.Asset, where: i.user_id == ^id
+  #   res = Test.Ability.load_resource(meta[:user], :index, %Test.Asset{user_id: 1}) 
+  #   assert inspect(res) == inspect(query)
+  # end
+  # test "load resrouce with 2 fields match", meta do
+  #   user_id = 1
+  #   asset_id = 3
+  #   query = from i in Test.Inventory, where: i.asset_id == ^asset_id, where: i.user_id == ^user_id
+  #   res = Test.Ability.load_resource(meta[:user], :index, %Test.Inventory{user_id: 1, asset_id: 3})
+  #   assert inspect(res) == inspect(query)
+  # end
 
-  test "nest attributes", meta do
-    user_id = meta[:user]
-    query = from i in Test.Item, join: u in Test.User, on: i.user_id == u.id, where: u.account_id == ^user_id
-    res = Test.Ability.load_resource(meta[:user], :index, %Test.Item{})
-    assert inspect(res) == inspect(query)
-  end
+  # test "nest attributes", meta do
+  #   user_id = meta[:user]
+  #   query = from i in Test.Item, join: u in Test.User, on: i.user_id == u.id, where: u.account_id == ^user_id
+  #   res = Test.Ability.load_resource(meta[:user], :index, %Test.Item{})
+  #   assert inspect(res) == inspect(query)
+  # end
 end
