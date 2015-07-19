@@ -26,7 +26,9 @@ defmodule AuthEx.Builder.Test do
       query = from r in model.__struct__
 
       result = AuthEx.Builder.build_query(item[:opts], :index, model, 0, query)
+      expected = ~s(#Ecto.Query<from i in Test.Item, join: u0 in Test.User, on: i.user_id == u0.id, join: u1 in Test.UserRole, on: u0.id == u1.user_id, join: r in Test.Role, on: u1.role_id == r.id, where: r.name in ^["admin", "superadmin"], preload: [user: [:roles]]>)
       IO.puts "result: #{inspect result}"
+      assert inspect(result) == expected
     end
 
     test "where in list" do
