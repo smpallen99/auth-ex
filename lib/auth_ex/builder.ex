@@ -9,6 +9,14 @@ defmodule AuthEx.Builder do
     Map.to_list(opts) |> build_query(action, model_name, level, acc)
   end
   def build_query([{:preload, [preload]} | t], action, model_name, level, acc) do
+    Logger.debug "0. build_query preload #{inspect preload}"
+    Logger.debug "acc: #{inspect acc}"
+    q = preload(acc, ^preload)
+    build_query(t, action, model_name, level, q)
+  end
+  def build_query([{:preload, preload} | t], action, model_name, level, acc) do
+    Logger.debug "0.0. build_query preload #{inspect preload}"
+    Logger.debug "acc: #{inspect acc}"
     q = preload(acc, ^preload)
     build_query(t, action, model_name, level, q)
   end
@@ -66,7 +74,6 @@ defmodule AuthEx.Builder do
 
         build_query(value, action, model_name2, level + 2, q)
       other -> 
-
         Logger.error "xxxx other: #{inspect other}"
         query
     end

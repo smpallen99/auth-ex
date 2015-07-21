@@ -1,12 +1,6 @@
 defmodule AuthEx do
 
-  @abilities [
-    {[:index, :show], User, []}
-  ]
-  def load_resource!(conn) do
-
-  end
-
-  def authorize!(conn, resource) do
+  def can?(conn, action, model_name) do
+    #Application.get_env(:auth_ex, :ability).valid_action?
   end
 end

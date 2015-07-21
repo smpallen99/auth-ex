@@ -16,7 +16,7 @@ defmodule AuthExTest do
   end
 
   test "invalid Asset index", meta do
-    refute Test.Ability.authorized?(meta[:user], :index, %Test.Asset{})
+    assert Test.Ability.authorized?(meta[:user], :index, Test.Asset)
   end
 
   test "valid Asset index", meta do
@@ -24,7 +24,7 @@ defmodule AuthExTest do
   end
 
   test "invalid user_id asset index", meta do
-    refute Test.Ability.authorized?(meta[:user], :index, %Test.Asset{user_id: 2})
+    assert Test.Ability.authorized?(meta[:user], :index, Test.Asset)
   end
 
   test "valid admin asset edit", meta do
@@ -42,6 +42,10 @@ defmodule AuthExTest do
   end
   test "invalid list", meta do
     refute Test.Ability.authorized?(meta[:user], :create, %Test.Asset{id: 3})
+  end
+
+  test "join through", meta do
+    assert Test.Ability.authorized?(meta[:user], :index, Test.Item)
   end
 
   # test "load resource with 1 field match", meta do
