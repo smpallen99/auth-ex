@@ -21,6 +21,6 @@ defmodule AuthExTest do
   end
 
   test "cannot edit", meta do
-    refute AuthEx.cannot?(meta[:conn], :edit, Test.Account)
+    assert AuthEx.cannot?(meta[:conn], :edit, Test.Account)
   end
 end

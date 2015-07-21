@@ -6,6 +6,7 @@ defmodule AuthEx do
     |> current_user
     |> Application.get_env(:auth_ex, :ability).authorized?(normalize(action), model)
   end
+  def cannot?(conn, action, model), do: !can?(conn, action, model)
 
   defp normalize(:read), do: :show
   defp normalize(:write), do: :edit
