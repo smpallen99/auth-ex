@@ -16,4 +16,9 @@ defmodule AuthEx.Utils do
   def escape(var) do
     Macro.escape(var, unquote: true)
   end
+
+  def current_user(conn, opts \\ []) do
+    current_user_name = opts[:current_user] || Application.get_env(:auth_ex, :current_user, :current_user)
+    Dict.fetch! conn.assigns, current_user_name
+  end
 end

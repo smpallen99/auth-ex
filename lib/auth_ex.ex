@@ -1,6 +1,14 @@
 defmodule AuthEx do
+  import AuthEx.Utils
 
-  def can?(conn, action, model_name) do
-    #Application.get_env(:auth_ex, :ability).valid_action?
+  def can?(conn, action, model) do
+    conn
+    |> current_user
+    |> Application.get_env(:auth_ex, :ability).authorized?(normalize(action), model)
   end
+
+  defp normalize(:read), do: :show
+  defp normalize(:write), do: :edit
+  defp normalize(:manage), do: :write
+  defp normalize(other), do: other 
 end

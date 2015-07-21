@@ -46,10 +46,10 @@ defmodule AuthEx.Ability do
           end
         end
       end
-      def valid_action?(_resource, %{actions: actions, module: model_name}, :index, model_name) 
+      def valid_action?(_resource, %{actions: actions, module: model_name}, action, model_name) 
           when is_atom(model_name) do
-        res = :index in actions
-        Logger.info "1. valid_action? :index, #{res}"
+        res = action in actions
+        Logger.info "1. valid_action? #{action}, #{res}"
         res
       end
       def valid_action?(resource, %{actions: actions, module: model_name, opts: []}, action, 

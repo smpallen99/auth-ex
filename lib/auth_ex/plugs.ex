@@ -1,5 +1,6 @@
 defmodule AuthEx.Plugs do
   import Keyword, only: [has_key?: 2]
+  import AuthEx.Utils
   require Logger
 
   def load_resource(conn, opts) do
@@ -36,8 +37,6 @@ defmodule AuthEx.Plugs do
   end
 
   defp _authorize_resource(conn, opts) do
-    current_user_name = opts[:current_user] || Application.get_env(:auth_ex, :current_user, :current_user)
-    current_user = Dict.fetch! conn.assigns, current_user_name
     action = get_action(conn)
 
     resource = cond do
@@ -47,7 +46,7 @@ defmodule AuthEx.Plugs do
         fetch_resource(conn, opts)
     end
 
-    case current_user |> Application.get_env(:auth_ex, :ability).authorized? action, resource do
+    case current_user(conn, opts) |> Application.get_env(:auth_ex, :ability).authorized? action, resource do
       true  ->
         %{ conn | assigns: Map.put(conn.assigns, :authorized, true) }
       false ->
@@ -146,7 +145,7 @@ defmodule AuthEx.Plugs do
       :error ->
         Logger.info "2. fetch all"
         conn
-        |> user_model(opts)
+        |> current_user(opts)
         |> Application.get_env(:auth_ex, :ability).load_resource(get_action(conn), opts[:model])
       {:ok, resource} ->
         case (resource.__struct__ == opts[:model]) do
@@ -156,15 +155,10 @@ defmodule AuthEx.Plugs do
           false ->
             Logger.info "4. fetch all"
             conn
-            |> user_model(opts)
+            |> current_user(opts)
             |> Application.get_env(:auth_ex, :ability).load_resource(get_action(conn), opts[:model])
         end
     end
-  end
-
-  defp user_model(conn, opts) do
-    current_user_name = opts[:current_user] || Application.get_env(:auth_ex, :current_user, :current_user)
-    Dict.fetch! conn.assigns, current_user_name
   end
 
   defp resource_name(conn, opts) do
