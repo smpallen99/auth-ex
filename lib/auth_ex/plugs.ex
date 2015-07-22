@@ -13,18 +13,22 @@ defmodule AuthEx.Plugs do
   end
 
   defp _load_resource(conn, opts) do
-    loaded_resource = case get_action(conn) do
+    {loaded_resource, key} = case get_action(conn) do
       :index  ->
-        fetch_all(conn, opts)
+        {fetch_all(conn, opts), Application.get_env(:auth_ex, :resources_key)} 
       :new    ->
-        nil
+        {nil, nil}
       :create ->
-        nil
+        {nil, nil}
       _       ->
-        fetch_resource(conn, opts)
+        {fetch_resource(conn, opts), nil}
     end
-
-    %{ conn | assigns: Map.put(conn.assigns, resource_name(conn, opts), loaded_resource) }
+    case key do
+      nil -> 
+        %{ conn | assigns: Map.put(conn.assigns, resource_name(conn, opts), loaded_resource) }
+      key -> 
+        %{ conn | assigns: Map.put(conn.assigns, key, loaded_resource) }
+    end
   end
 
   def authorize_resource(conn, opts) do
@@ -75,14 +79,6 @@ defmodule AuthEx.Plugs do
     %{ conn | assigns: Map.put(conn.assigns, resource_name(conn, opts), nil) }
   end
   
-  defp get_action(conn) do
-    conn.assigns
-    |> Map.fetch(:action)
-    |> case do
-      {:ok, action} -> action
-      _             -> conn.private.phoenix_action
-    end
-  end
 
   defp action_exempt?(conn, opts) do
     action = get_action(conn)
@@ -123,15 +119,24 @@ defmodule AuthEx.Plugs do
     |> Map.fetch(resource_name(conn, opts))
     |> case do
       :error ->
-        repo.get(opts[:model], conn.params["id"])
+        conn
+        |> current_user(opts)
+        |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
+        #repo.get(opts[:model], conn.params["id"])
       {:ok, nil} ->
-        repo.get(opts[:model], conn.params["id"])
+        conn
+        |> current_user(opts)
+        |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
+        #repo.get(opts[:model], conn.params["id"])
       {:ok, resource} -> # if there is already a resource loaded onto the conn
         case (resource.__struct__ == opts[:model]) do
           true  ->
             resource
           false ->
-            repo.get(opts[:model], conn.params["id"])
+            conn
+            |> current_user(opts)
+            |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
+            #repo.get(opts[:model], conn.params["id"])
         end
     end
   end
@@ -146,7 +151,7 @@ defmodule AuthEx.Plugs do
         Logger.info "2. fetch all"
         conn
         |> current_user(opts)
-        |> Application.get_env(:auth_ex, :ability).load_resource(get_action(conn), opts[:model])
+        |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
       {:ok, resource} ->
         case (resource.__struct__ == opts[:model]) do
           true  ->
@@ -156,31 +161,10 @@ defmodule AuthEx.Plugs do
             Logger.info "4. fetch all"
             conn
             |> current_user(opts)
-            |> Application.get_env(:auth_ex, :ability).load_resource(get_action(conn), opts[:model])
+            |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
         end
     end
   end
 
-  defp resource_name(conn, opts) do
-    res = case opts[:as] do
-      nil ->
-        opts[:model]
-        |> Atom.to_string
-        |> String.split(".")
-        |> List.last
-        |> Mix.Utils.underscore
-        |> pluralize_if_needed(conn)
-        |> String.to_atom
-      as -> as
-    end
-    Logger.debug("resource_name: #{inspect res}")
-    res
-  end
 
-  defp pluralize_if_needed(name, conn) do
-    case get_action(conn) in [:index] do
-      true -> name <> "s"
-      _    -> name
-    end
-  end
 end
