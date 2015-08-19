@@ -26,7 +26,7 @@ defmodule AuthEx.Utils do
   end
 
   def resource_name(conn, opts \\ []) do
-    res = case opts[:as] do
+    case opts[:as] do
       nil ->
         opts[:model]
         |> Atom.to_string
@@ -37,8 +37,6 @@ defmodule AuthEx.Utils do
         |> String.to_atom
       as -> as
     end
-    #Logger.debug("resource_name: #{inspect res}")
-    res
   end
 
   defp pluralize_if_needed(name, conn) do
@@ -56,4 +54,10 @@ defmodule AuthEx.Utils do
       _             -> conn.private.phoenix_action
     end
   end
+
+  # def debug(message) do
+  #   if @debug do
+  #     IO.puts "ExAuth Debug: " <> message
+  #   end
+  # end
 end

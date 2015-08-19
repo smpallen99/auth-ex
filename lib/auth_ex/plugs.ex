@@ -1,6 +1,7 @@
 defmodule AuthEx.Plugs do
+  @debug false
   import Keyword, only: [has_key?: 2]
-  import AuthEx.Utils
+  import AuthEx.Utils, except: [debug: 1]
   require Logger
 
   def load_resource(conn, opts) do
@@ -32,6 +33,7 @@ defmodule AuthEx.Plugs do
   end
 
   def authorize_resource(conn, opts) do
+    debug "authorize_resource: action_valid?: #{inspect action_valid?(conn, opts)}"
     conn
     |> action_valid?(opts)
     |> case do
@@ -49,6 +51,8 @@ defmodule AuthEx.Plugs do
       true      ->
         fetch_resource(conn, opts)
     end
+    debug "_authorize_resource: action: #{inspect action}"
+    debug ""
 
     case current_user(conn, opts) |> Application.get_env(:auth_ex, :ability).authorized? action, resource do
       true  ->
@@ -119,23 +123,35 @@ defmodule AuthEx.Plugs do
     |> Map.fetch(resource_name(conn, opts))
     |> case do
       :error ->
-        conn
+        debug "-----> fetch_resource: 1."
+        res = conn
         |> current_user(opts)
         |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
+        debug " ----- fetch result  #{inspect res}" <> "**********************\n"
+        if is_list(res), do: debug("res count: #{Enum.count(res)}")
+        res
         #repo.get(opts[:model], conn.params["id"])
       {:ok, nil} ->
-        conn
+        debug "-----> fetch_resource: 2."
+        res = conn
         |> current_user(opts)
         |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
+        debug " ----- fetch result  #{inspect res}" <> "**********************\n"
+        res
         #repo.get(opts[:model], conn.params["id"])
       {:ok, resource} -> # if there is already a resource loaded onto the conn
         case (resource.__struct__ == opts[:model]) do
           true  ->
+            debug "-----> fetch_resource: 3."
+            debug " ----- fetch result  #{inspect resource}" <> "**********************\n"
             resource
           false ->
-            conn
+            debug "-----> fetch_resource: 4."
+            res = conn
             |> current_user(opts)
             |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
+            debug " ----- fetch result  #{inspect res}" <> "**********************\n"
+            res
             #repo.get(opts[:model], conn.params["id"])
         end
     end
@@ -143,22 +159,18 @@ defmodule AuthEx.Plugs do
 
   defp fetch_all(conn, opts) do
 
-    Logger.info "1. fetch all"
     conn
     |> Map.fetch(resource_name(conn, opts))
     |> case do
       :error ->
-        Logger.info "2. fetch all"
         conn
         |> current_user(opts)
         |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
       {:ok, resource} ->
         case (resource.__struct__ == opts[:model]) do
           true  ->
-            Logger.info "3. fetch all"
             resource
           false ->
-            Logger.info "4. fetch all"
             conn
             |> current_user(opts)
             |> Application.get_env(:auth_ex, :ability).load_resource(conn, get_action(conn), opts[:model])
@@ -166,5 +178,9 @@ defmodule AuthEx.Plugs do
     end
   end
 
-
+  defp debug(message) do
+    if @debug do
+      IO.puts "ExAuth Debug: " <> message
+    end
+  end
 end

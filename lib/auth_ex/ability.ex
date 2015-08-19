@@ -1,4 +1,6 @@
 defmodule AuthEx.Ability do
+  @debug false
+
   import AuthEx.Utils, only: [escape: 1]
   require Logger
   #use Ecto.Query
@@ -30,15 +32,17 @@ defmodule AuthEx.Ability do
 
     quote location: :keep, bind_quoted: [resource: escape(resource), contents: escape(contents)] do
       require Logger
+      @debug false
       #def handle_ability(var!(conn), unquote(resource) = var!(resource), action) do
       def authorized?(unquote(resource) = var!(resource), action, model) do
       #def handle_ability(action, model) do 
-        Logger.info "===> authorized? action: #{action}, model: #{inspect model}"
+        debug "===> authorized? action: #{action}, model: #{inspect model}"
         res = var!(resource)
         var!(ability_blocks, AuthEx.Ability) = []
         unquote(contents)
         ability_blocks = Enum.reverse var!(ability_blocks, AuthEx.Ability)
         Enum.reduce ability_blocks, false, fn(item, acc) -> 
+          item = Map.put(item, :opts, Keyword.delete(item[:opts], :preload))
           if valid_action? res, item, action, model do
             true
           else
@@ -49,19 +53,19 @@ defmodule AuthEx.Ability do
       def valid_action?(_resource, %{actions: actions, module: model_name}, action, model_name) 
           when is_atom(model_name) do
         res = action in actions
-        Logger.info "1. valid_action? model: #{inspect model_name}, #{action}, #{res}, actions: #{inspect actions}"
+        debug "1. ----- valid_action? model: #{inspect model_name}, #{action}, #{res}, actions: #{inspect actions}"
         res
       end
       def valid_action?(resource, %{actions: actions, module: model_name, opts: []}, action, 
           %{__struct__: model_name} = model) do
         res = action in actions
-        Logger.info "2. valid_action? #{action} #{res}"
+        debug "2. ----- valid_action? #{action} #{res}"
         res
       end
       def valid_action?(resource, %{actions: actions, module: model_name, opts: opts}, :index, 
           %{__struct__: model_name} = model) do
         res = :index in actions 
-        Logger.info "3. valid_action? :index #{res}"
+        debug "3. ----- valid_action? :index #{res}"
         res
       end
 
@@ -72,31 +76,32 @@ defmodule AuthEx.Ability do
         else
           false
         end
-        Logger.info "4. valid_action? #{action} #{res}"
+        debug "4. ----- valid_action? #{action} #{res}"
         res
       end
       def valid_action?(_, b, c, d) do 
-        Logger.info "5. valid_action? false"
-        #Logger.info "b: #{inspect b}, c: #{inspect c}, d: #{inspect d}"
+        #debug "5. valid_action? false"
+        # debug "5. ----- valid_action? b: #{inspect b}, c: #{inspect c}, d: #{inspect d}" <> "\n"
+        debug "5. ----- valid_action? #{inspect c} #{inspect b[:module]} - #{inspect d}" <> "\n"
         false
       end
       # def valid_action?(_, _, _, _) do 
-      #   Logger.info "4. valid_action? false"
+      #   debug "4. valid_action? false"
       #   false
       # end
 
       def valid_opts?(model, [], acc) do 
-        Logger.info "0. valid_opts? #{acc}"
+        debug "0. valid_opts? #{acc}"
         acc
       end
       def valid_opts?(model, [{field, list} | t], acc) when is_list(list) do
-        Logger.info "1. valid_opts? model_name: #{model.__struct__}, field: #{field}, list: #{inspect list}"
-        Logger.info "       model: #{inspect model}"
+        debug "1. valid_opts? model_name: #{model.__struct__}, field: #{field}, list: #{inspect list}"
+        debug "       model: #{inspect model}"
         new_acc = if Map.get(model, field) in list, do: true, else: acc
         valid_opts?(model, t, new_acc)
       end
       def valid_opts?(model, [{field, value} | t], acc) do
-        Logger.info "2. valid_opts? model_name: #{model.__struct__}, field: #{field}, value: #{inspect value}"
+        debug "2. valid_opts? model_name: #{model.__struct__}, field: #{field}, value: #{inspect value}"
         new_acc = if Map.get(model, field) == value, do: true, else: acc
         valid_opts?(model, t, new_acc)
       end
@@ -113,17 +118,17 @@ defmodule AuthEx.Ability do
         # IO.puts "---------------------------------"
         # IO.inspect ability_blocks
         # IO.puts "================================="
-        Logger.info "====> model_name: #{model_name}"
+        debug "====> model_name: #{model_name}"
         Enum.reduce(ability_blocks, model_name, 
           fn(item, acc) ->
-            Logger.debug "==> ability blocks: item: #{inspect item}"
-            Logger.info "item: #{inspect item}, acc: #{inspect acc}"
+            debug "==> ability blocks: item: #{inspect item}"
+            debug "item: #{inspect item}, acc: #{inspect acc}"
             if valid_action? res, item, action, model_name do
-              Logger.info "valid_action true"
-              Logger.info "   action: #{inspect action}, model_name: #{model_name}, opts: #{inspect item[:opts]}"
+              debug "valid_action true"
+              debug "   action: #{inspect action}, model_name: #{model_name}, opts: #{inspect item[:opts]}"
               AuthEx.Builder.build_query(item[:opts], action, model_name, 0, acc, conn)
              else
-              Logger.info "valid_action false"
+              debug "valid_action false"
                acc
              end
           end)
@@ -131,7 +136,7 @@ defmodule AuthEx.Ability do
       end
 
       defp get_resource(query, conn, repo, :index) do 
-        Logger.info "-=-=-> get_resource query: #{inspect query}"
+        debug "-=-=-> get_resource query: #{inspect query}"
         case Application.get_env(:auth_ex, :paginate) do
           nil -> 
             repo.all(query)
@@ -142,12 +147,27 @@ defmodule AuthEx.Ability do
         end
       end
       defp get_resource(query, conn, repo, _) do 
-        Logger.info "-=-=-> get_resource query: #{inspect query}"
-        repo.one!(query)
+        debug "-=-=-> get_resource query: #{inspect query}"
+        Logger.warn "-=-=-> get_resource query: #{inspect query}"
+        repo.all(query)
+        |> singularize_resource
       end
 
+      defp singularize_resource([single]), do: single
+      defp singularize_resource(other), do: other
+
+      defp debug(message) do
+        if @debug do
+          IO.puts "ExAuth Debug: " <> message
+        end
+      end
     end
 
   end
 
+  defp debug(message) do
+    if @debug do
+      IO.puts "ExAuth Debug: " <> message
+    end
+  end
 end

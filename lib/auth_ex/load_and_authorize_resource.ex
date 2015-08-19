@@ -10,7 +10,6 @@
     #   call conn, Enum.into(opts, %{})
     # end
     def call(conn, opts) do
-      Logger.debug "#{__MODULE__}.call"
       load_and_authorize_resource(conn, opts)
     end
   end
