@@ -1,6 +1,12 @@
 defmodule AuthEx do
   import AuthEx.Utils
 
+  defmacro __using__(_) do
+    quote do
+      import AuthEx.Plugs
+    end
+  end
+
   def can?(conn, action, model) do
     conn
     |> current_user

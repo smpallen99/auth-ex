@@ -6,9 +6,12 @@ defmodule AuthEx.Builder do
   import Ecto.Query
   require Logger
 
-  def build_query(opts, action, %{__struct__: model_name}, level, acc, conn),
-    do: build_query(opts, action, model_name, level, acc, conn)
+  def build_query(opts, action, %{__struct__: model_name}, level, acc, conn) do
+    debug "9. build_query params: #{inspect conn.params}"
+    build_query(opts, action, model_name, level, acc, conn)
+  end
   def build_query(%{} = opts, action, model_name, level, acc, conn) do
+    debug "8. build_query params: #{inspect conn.params}"
     Map.to_list(opts) |> build_query(action, model_name, level, acc, conn)
   end
   def build_query([{:preload, [preload]} | t], action, model_name, level, acc, conn) do
@@ -48,9 +51,9 @@ defmodule AuthEx.Builder do
     debug "4.2 build_query action: #{inspect action}, id: #{id}"
     where(query, [q: level], q.id == ^id)
   end
-  def build_query([], action, _, _, acc, _conn) do 
+  def build_query([], action, _, _, acc, conn) do 
     debug "4.5 build_query action: #{inspect action}"
-    acc
+    build_order_by(acc, action, conn)
   end
   def build_query(item, :index, _, level, acc, _conn) do
     debug "build query default action: :index, level: #{level}, item: #{inspect item}"
@@ -62,6 +65,10 @@ defmodule AuthEx.Builder do
     build_query(t, action, model_name, level, where(acc, [q: level], q.id == ^id), conn)
   end
 
+  def build_order_by(query, action, conn) do
+    debug "build_order_by: #{action}, #{inspect query}, params: #{inspect conn.params}"
+    query
+  end
   def build_where(query, name, value, level) when is_list(value) do
     debug "build_where: name: #{name}, value: #{inspect value}"
     where(query, [q: level], field(q, ^name) in ^value)
